@@ -23,6 +23,7 @@ module StumpyPNG
     getter bit_depth, color_type, compression_method, filter_method, interlace_method, palette
     getter parsed, data
     getter canvas : Canvas
+    getter iTXt
 
     def initialize
       @width = 0
@@ -42,8 +43,15 @@ module StumpyPNG
       @data = Bytes.new(0)
 
       @idat_count = 0
+      @iTXt = ""
 
       @canvas = Canvas.new(0, 0)
+    end
+
+    def parse_iTXt(chunk : Chunk)
+      data = String.new(chunk.data)
+      data =~ /(.*?)\0\0\0\0\0\0\0(.*)/
+      @iTXt = $2
     end
 
     def parse_IEND(chunk : Chunk)
@@ -217,6 +225,7 @@ module StumpyPNG
       when "PLTE"; parse_PLTE(chunk)
       when "IDAT"; parse_IDAT(chunk)
       when "IEND"; parse_IEND(chunk)
+      when "iTXt"; parse_iTXt(chunk)
       end
     end
   end

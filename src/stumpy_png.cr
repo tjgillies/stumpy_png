@@ -24,13 +24,13 @@ module StumpyPNG
     Datastream.read(path).chunks.each do |chunk|
       png.parse_chunk(chunk)
     end
-
-    png.canvas
+    png
   end
 
   def self.write(canvas, path, **options)
     bit_depth = options.fetch(:bit_depth, 16)
     color_type = options.fetch(:color_type, :rgb_alpha)
+    meta = options.fetch(:meta, "")
 
     unless WRITE_BIT_DEPTHS.includes?(bit_depth)
       raise "Invalid bit depth: #{bit_depth}, \
@@ -86,6 +86,22 @@ module StumpyPNG
       file.write_bytes(crc_io.size.to_u32, IO::ByteFormat::BigEndian)
       file.seek(0, IO::Seek::End)
       multi.write_bytes(crc_io.crc.to_u32, IO::ByteFormat::BigEndian)
+
+
+      # Write iTXt chunk
+      str = IO::Memory.new
+      str << "Keyword"
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str.write_byte(0_u8)
+      str << meta
+      itxt = Chunk.new("iTXt", str.to_slice)
+      file << String.new(itxt.raw)
+
 
       # Write the IEND chunk
       file.write_bytes(0_u32, IO::ByteFormat::BigEndian)
